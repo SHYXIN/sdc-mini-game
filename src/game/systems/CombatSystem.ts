@@ -56,12 +56,23 @@ export class CombatSystem {
   // ------------------------------------------------------------------  main update
 
   update(dt: number): void {
+    this.updateEnemies(dt);
     this.updateBullets(dt);
     this.checkBulletWallCollisions();
     this.checkBulletEnemyCollisions();
     this.checkBulletPlayerCollisions();
     this.checkEnemyPlayerContact(dt);
     this.cleanupInactive();
+  }
+
+  // ------------------------------------------------------------------  enemy AI
+
+  private updateEnemies(dt: number): void {
+    for (const enemy of this.enemies) {
+      if (enemy.active) {
+        enemy.update(dt, this.player.position, (b) => this.addBullet(b));
+      }
+    }
   }
 
   // ------------------------------------------------------------------  bullet movement
