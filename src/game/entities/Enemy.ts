@@ -158,6 +158,8 @@ export class Enemy extends Entity {
 
   // ------------------------------------------------------------------  public helpers
 
+  get state(): EnemyAIState { return this.aiState; }
+
   takeDamage(amount: number): void {
     this.hp = Math.max(0, this.hp - amount);
     if (this.hp <= 0) {

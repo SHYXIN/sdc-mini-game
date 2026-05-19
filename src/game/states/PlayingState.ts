@@ -49,7 +49,7 @@ export class PlayingState implements GameState {
       WAREHOUSE.playerSpawn.x,
       WAREHOUSE.playerSpawn.y
     );
-    this.player = new Player(new Vector2(spawnPixel.x, spawnPixel.y));
+    this.player = new Player(new Vector2(spawnPixel.x, spawnPixel.y), this.mapSystem);
 
     // Apply progression bonuses
     if (progression) {
@@ -109,14 +109,14 @@ export class PlayingState implements GameState {
   private spawnEnemies(): void {
     // Place enemies at predefined tile positions on the warehouse map
     const enemySpawns: { tileX: number; tileY: number; type: EnemyId }[] = [
-      { tileX: 2,  y: 3,  type: 'grunt' },
-      { tileX: 12, y: 3,  type: 'grunt' },
-      { tileX: 7,  y: 7,  type: 'shooter' },
-      { tileX: 2,  y: 11, type: 'grunt' },
-      { tileX: 12, y: 11, type: 'heavy' },
-      { tileX: 7,  y: 14, type: 'grunt' },
-      { tileX: 3,  y: 17, type: 'shooter' },
-      { tileX: 11, y: 17, type: 'grunt' },
+      { tileX: 2,  tileY: 3,  type: 'grunt' },
+      { tileX: 12, tileY: 3,  type: 'grunt' },
+      { tileX: 7,  tileY: 7,  type: 'shooter' },
+      { tileX: 2,  tileY: 11, type: 'grunt' },
+      { tileX: 12, tileY: 11, type: 'heavy' },
+      { tileX: 7,  tileY: 14, type: 'grunt' },
+      { tileX: 3,  tileY: 17, type: 'shooter' },
+      { tileX: 11, tileY: 17, type: 'grunt' },
     ];
     for (const spawn of enemySpawns) {
       const pixel = this.mapSystem.tileToPixel(spawn.tileX, spawn.tileY);
@@ -192,12 +192,31 @@ export class PlayingState implements GameState {
       if (item.active) item.draw(ctx);
     }
     for (const enemy of entities.enemies) {
-      if (enemy.active) enemy.draw(ctx);
+      if (enemy.active) {
+        enemy.draw(ctx);
+        // Debug: show AI state
+        ctx.fillStyle = '#ff0';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(enemy.state, enemy.position.x, enemy.position.y - enemy.radius - 5);
+      }
     }
     for (const bullet of entities.bullets) {
       if (bullet.active) bullet.draw(ctx);
     }
     if (this.player.active) this.player.draw(ctx);
+
+    // Debug info
+    ctx.fillStyle = '#ff0';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const aliveEnemies = entities.enemies.filter(e => e.active).length;
+    ctx.fillText(`Enemies: ${aliveEnemies}/${entities.enemies.length} Items: ${entities.items.length} Bullets: ${entities.bullets.length}`, 10, 50);
+    ctx.fillText(`Player: ${Math.round(this.player.position.x)},${Math.round(this.player.position.y)} HP: ${Math.ceil(this.player.hp)}`, 10, 66);
+    ctx.fillText(`Weapon: ${this.player.weapon} Ammo: ${this.player.getAmmo(this.player.weapon)}`, 10, 82);
+    const inv = this.inventorySystem;
+    ctx.fillText(`背包: ${inv.usedSlots}/${inv.totalSlots}`, 10, 98);
 
     // HUD — timer info
     ctx.fillStyle = '#ffffff';

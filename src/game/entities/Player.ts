@@ -5,6 +5,7 @@ import { WEAPONS, WeaponId } from '../../data/weapons';
 import { InputState } from '../../core/Input';
 import { Enemy } from './Enemy';
 import { Bullet } from './Bullet';
+import { MapSystem } from '../systems/MapSystem';
 
 /**
  * Player entity — controlled by keyboard/mouse input.
@@ -29,10 +30,12 @@ export class Player extends Entity {
 
   /** Stored aim direction from last update, used for drawing the aim line. */
   private lastAimDir: Vector2 = new Vector2(1, 0);
+  private mapSystem: MapSystem;
 
-  constructor(spawnPos: Vector2) {
+  constructor(spawnPos: Vector2, mapSystem: MapSystem) {
     super();
     this.position = spawnPos;
+    this.mapSystem = mapSystem;
   }
 
   /**
@@ -43,9 +46,23 @@ export class Player extends Entity {
     // Store aim direction for rendering
     this.lastAimDir = input.aimDirection;
 
-    // Movement: apply moveDirection at a fixed speed
+    // Movement: apply moveDirection at a fixed speed, with wall collision
     const moveSpeed = 120;
-    this.position = this.position.add(input.moveDirection.scale(moveSpeed * dt));
+    const newPos = this.position.add(input.moveDirection.scale(moveSpeed * dt));
+    if (this.mapSystem.isPassable(newPos.x, newPos.y, this.radius)) {
+      this.position = newPos;
+    } else {
+      // Try sliding along X axis only
+      const slideX = new Vector2(newPos.x, this.position.y);
+      if (this.mapSystem.isPassable(slideX.x, slideX.y, this.radius)) {
+        this.position = slideX;
+      }
+      // Try sliding along Y axis only
+      const slideY = new Vector2(this.position.x, newPos.y);
+      if (this.mapSystem.isPassable(slideY.x, slideY.y, this.radius)) {
+        this.position = slideY;
+      }
+    }
 
     // Invincibility countdown
     if (this.invincibleTimer > 0) {
@@ -63,7 +80,9 @@ export class Player extends Entity {
   }
 
   /**
-   * Find the nearest enemy within attack range and shoot at it.
+   * Shoot toward the mouse aim direction.
+   * Only fires if there is at least one active enemy within range
+   * (so the player must be aiming roughly toward enemies).
    * Returns an array of Bullets (multiple for shotgun).
    */
   private tryShoot(enemies: Enemy[]): Bullet[] {
@@ -76,22 +95,9 @@ export class Player extends Entity {
       return [];
     }
 
-    // Find nearest active enemy within weapon range
-    // Use detection radius as effective range
-    const range = weaponConfig.bulletSpeed * 2;
-    let nearest: Enemy | null = null;
-    let nearestDistSq = Infinity;
-
-    for (const enemy of enemies) {
-      if (!enemy.active) continue;
-      const distSq = this.distanceSqTo(enemy);
-      if (distSq < nearestDistSq && distSq <= range * range) {
-        nearest = enemy;
-        nearestDistSq = distSq;
-      }
-    }
-
-    if (!nearest) return [];
+    // Only shoot if at least one enemy exists (any distance — bullet will fly until it hits)
+    const hasEnemy = enemies.some(e => e.active);
+    if (!hasEnemy) return [];
 
     // Consume ammo for non-pistol weapons
     if (this.weapon !== 'pistol') {
@@ -101,8 +107,8 @@ export class Player extends Entity {
     // Set cooldown based on fireRate
     this.shootCooldown = 1 / weaponConfig.fireRate;
 
-    // Create bullet(s)
-    const direction = nearest.position.sub(this.position).normalize();
+    // Fire in the mouse aim direction
+    const direction = this.lastAimDir.lengthSq() > 0 ? this.lastAimDir.normalize() : new Vector2(1, 0);
     const pellets = weaponConfig.pellets ?? 1;
     const bulletSpeed = weaponConfig.bulletSpeed;
     const spread = weaponConfig.spread;

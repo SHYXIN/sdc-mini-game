@@ -5,7 +5,7 @@ import { ITEM_TYPES, type ItemTypeId, type ItemTypeConfig, type WeaponId } from 
 const INITIAL_SLOTS = 6;
 const REGEN_DELAY = 5;      // 脱离战斗 5 秒后开始回血
 const REGEN_RATE = 0.05;    // 每秒回 5% 最大血量
-const PICKUP_RADIUS = 20;   // 自动拾取半径
+const PICKUP_RADIUS = 35;   // 自动拾取半径
 
 export interface InventorySlot {
   itemTypeId: ItemTypeId;
