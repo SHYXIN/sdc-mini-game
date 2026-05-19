@@ -18,3 +18,4 @@ Thumbs.db
 # Temporary
 *.tmp
 *.log
+.cluade/
