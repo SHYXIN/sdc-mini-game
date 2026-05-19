@@ -11,6 +11,7 @@ import { getItemsByRarity, type ItemTypeId } from '../../data/items';
 export interface CombatEvents {
   onEnemyKilled?: (enemy: Enemy) => void;
   onPlayerDied?: () => void;
+  onPlayerHurt?: () => void;
   onBulletHit?: (bullet: Bullet, target: Enemy | Player) => void;
 }
 
@@ -137,6 +138,10 @@ export class CombatSystem {
           this.events.onBulletHit(bullet, this.player);
         }
 
+        if (this.player.active && this.events.onPlayerHurt) {
+          this.events.onPlayerHurt();
+        }
+
         if (!this.player.active && this.events.onPlayerDied) {
           this.events.onPlayerDied();
         }
@@ -157,6 +162,10 @@ export class CombatSystem {
       if (enemy.collidesWith(this.player)) {
         const damage = enemy.config.attackDamage * dt;
         this.player.takeDamage(damage);
+
+        if (this.player.active && this.events.onPlayerHurt) {
+          this.events.onPlayerHurt();
+        }
 
         if (!this.player.active && this.events.onPlayerDied) {
           this.events.onPlayerDied();

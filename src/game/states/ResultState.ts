@@ -1,7 +1,9 @@
 import type { GameState } from '../StateStack';
+import { loadProgression, saveProgression } from '../progression/ProgressionData';
 
 /**
  * Result state — shows extract success/failure and earnings.
+ * Persists gold and extraction/death stats to localStorage on enter.
  * Click to return to main menu (callback handled externally).
  */
 export class ResultState implements GameState {
@@ -30,6 +32,16 @@ export class ResultState implements GameState {
   }
 
   onEnter(): void {
+    // Persist progression data
+    const prog = loadProgression();
+    if (this.success) {
+      prog.gold += this.earnings;
+      prog.totalExtractions += 1;
+    } else {
+      prog.totalDeaths += 1;
+    }
+    saveProgression(prog);
+
     window.addEventListener('click', this.handleClick);
     window.addEventListener('mousemove', this.handleMouseMove);
   }

@@ -1,23 +1,34 @@
 import type { GameState } from '../StateStack';
 
 /**
- * Pixel-art main menu with title and start button.
+ * Pixel-art main menu with title, start button, and armory button.
  * Button click is detected via canvas coordinate hit-testing (no DOM).
  */
 export class MainMenuState implements GameState {
   private readonly onStartGame: () => void;
-  private hovered = false;
+  private readonly onOpenArmory: () => void;
+  private hoveredBtn: number = -1;
 
   // Button dimensions (centered)
-  private readonly btnX: number;
-  private readonly btnY: number;
   private readonly btnW = 200;
   private readonly btnH = 50;
+  private readonly startBtnX: number;
+  private readonly startBtnY: number;
+  private readonly armoryBtnX: number;
+  private readonly armoryBtnY: number;
 
-  constructor(onStartGame: () => void, canvasWidth = 480, canvasHeight = 640) {
+  constructor(
+    onStartGame: () => void,
+    onOpenArmory: () => void,
+    canvasWidth = 480,
+    canvasHeight = 640
+  ) {
     this.onStartGame = onStartGame;
-    this.btnX = (canvasWidth - this.btnW) / 2;
-    this.btnY = canvasHeight * 0.6;
+    this.onOpenArmory = onOpenArmory;
+    this.startBtnX = (canvasWidth - this.btnW) / 2;
+    this.startBtnY = canvasHeight * 0.55;
+    this.armoryBtnX = (canvasWidth - this.btnW) / 2;
+    this.armoryBtnY = this.startBtnY + this.btnH + 16;
   }
 
   onEnter(): void {
@@ -54,42 +65,65 @@ export class MainMenuState implements GameState {
     ctx.font = '16px monospace';
     ctx.fillText('Search · Destroy · Extract', cw / 2, ch * 0.38);
 
-    // Button background
-    ctx.fillStyle = this.hovered ? '#ffffff' : '#e0e0e0';
-    ctx.fillRect(this.btnX, this.btnY, this.btnW, this.btnH);
-
-    // Button border
+    // Start Game button
+    ctx.fillStyle = this.hoveredBtn === 0 ? '#ffffff' : '#e0e0e0';
+    ctx.fillRect(this.startBtnX, this.startBtnY, this.btnW, this.btnH);
     ctx.strokeStyle = '#e94560';
     ctx.lineWidth = 2;
-    ctx.strokeRect(this.btnX, this.btnY, this.btnW, this.btnH);
-
-    // Button text
+    ctx.strokeRect(this.startBtnX, this.startBtnY, this.btnW, this.btnH);
     ctx.fillStyle = '#1a1a2e';
     ctx.font = 'bold 20px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('开始游戏', this.btnX + this.btnW / 2, this.btnY + this.btnH / 2);
+    ctx.fillText('开始游戏', this.startBtnX + this.btnW / 2, this.startBtnY + this.btnH / 2);
+
+    // Armory button
+    ctx.fillStyle = this.hoveredBtn === 1 ? '#ffffff' : '#e0e0e0';
+    ctx.fillRect(this.armoryBtnX, this.armoryBtnY, this.btnW, this.btnH);
+    ctx.strokeStyle = '#e94560';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(this.armoryBtnX, this.armoryBtnY, this.btnW, this.btnH);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.font = 'bold 20px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('军械库', this.armoryBtnX + this.btnW / 2, this.armoryBtnY + this.btnH / 2);
   }
 
-  private inButton(x: number, y: number): boolean {
+  private inStartBtn(x: number, y: number): boolean {
     return (
-      x >= this.btnX &&
-      x <= this.btnX + this.btnW &&
-      y >= this.btnY &&
-      y <= this.btnY + this.btnH
+      x >= this.startBtnX &&
+      x <= this.startBtnX + this.btnW &&
+      y >= this.startBtnY &&
+      y <= this.startBtnY + this.btnH
+    );
+  }
+
+  private inArmoryBtn(x: number, y: number): boolean {
+    return (
+      x >= this.armoryBtnX &&
+      x <= this.armoryBtnX + this.btnW &&
+      y >= this.armoryBtnY &&
+      y <= this.armoryBtnY + this.btnH
     );
   }
 
   private handleMouseMove = (e: MouseEvent): void => {
     const canvas = e.target as HTMLCanvasElement | null;
     if (!canvas || canvas.tagName !== 'CANVAS') {
-      this.hovered = false;
+      this.hoveredBtn = -1;
       return;
     }
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    this.hovered = this.inButton(x, y);
+    if (this.inStartBtn(x, y)) {
+      this.hoveredBtn = 0;
+    } else if (this.inArmoryBtn(x, y)) {
+      this.hoveredBtn = 1;
+    } else {
+      this.hoveredBtn = -1;
+    }
   };
 
   private handleClick = (e: MouseEvent): void => {
@@ -98,8 +132,10 @@ export class MainMenuState implements GameState {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    if (this.inButton(x, y)) {
+    if (this.inStartBtn(x, y)) {
       this.onStartGame();
+    } else if (this.inArmoryBtn(x, y)) {
+      this.onOpenArmory();
     }
   };
 }

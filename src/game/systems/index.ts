@@ -5,3 +5,5 @@ export { CombatSystem } from './CombatSystem';
 export type { CombatEvents } from './CombatSystem';
 export { InventorySystem } from './InventorySystem';
 export type { InventorySlot } from './InventorySystem';
+export { ExtractSystem } from './ExtractSystem';
+export type { ExtractEvents } from './ExtractSystem';

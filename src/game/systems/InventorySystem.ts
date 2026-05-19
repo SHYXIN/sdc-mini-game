@@ -26,6 +26,9 @@ export class InventorySystem {
   private maxSlots: number;
   private combatTimer: number;
 
+  /** Optional callback fired when an item is successfully picked up. */
+  onPickup?: () => void;
+
   constructor(player: Player, maxSlots: number = INITIAL_SLOTS) {
     this.player = player;
     this.maxSlots = maxSlots;
@@ -57,6 +60,7 @@ export class InventorySystem {
         this.player.addAmmo(weaponId, amount);
       }
       item.active = false;
+      this.onPickup?.();
       return true;
     }
 
@@ -64,6 +68,7 @@ export class InventorySystem {
       const weaponId = item.config.weaponId as WeaponId;
       this.player.switchWeapon(weaponId);
       item.active = false;
+      this.onPickup?.();
       return true;
     }
 
@@ -72,6 +77,7 @@ export class InventorySystem {
       if (freeIndex === -1) return false; // inventory full
       this.slots[freeIndex] = { itemTypeId: item.itemTypeId, config: item.config };
       item.active = false;
+      this.onPickup?.();
       return true;
     }
 
