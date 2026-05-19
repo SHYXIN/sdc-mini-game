@@ -3,9 +3,14 @@ import type { KeyboardInput } from '../../core/Input';
 import type { GameState } from '../StateStack';
 import { MapSystem, CombatSystem, InventorySystem, ExtractSystem } from '../systems';
 import { Player } from '../entities/Player';
-import { WAREHOUSE } from '../../data';
+import { Enemy } from '../entities/Enemy';
+import { Item } from '../entities/Item';
+import { WAREHOUSE, ENEMIES } from '../../data';
 import type { AudioSystem } from '../audio';
 import type { ProgressionData } from '../progression/ProgressionData';
+import { Vector2 } from '../../utils/Vector2';
+import { ItemSpawnSystem } from '../systems/ItemSpawnSystem';
+import type { EnemyId } from '../../data/enemies';
 
 /**
  * Playing state — core gameplay loop.
@@ -44,7 +49,7 @@ export class PlayingState implements GameState {
       WAREHOUSE.playerSpawn.x,
       WAREHOUSE.playerSpawn.y
     );
-    this.player = new Player(spawnPixel);
+    this.player = new Player(new Vector2(spawnPixel.x, spawnPixel.y));
 
     // Apply progression bonuses
     if (progression) {
@@ -93,6 +98,41 @@ export class PlayingState implements GameState {
         },
       }
     );
+
+    // Spawn enemies at fixed positions around the map
+    this.spawnEnemies();
+
+    // Spawn items at loot points
+    this.spawnItems();
+  }
+
+  private spawnEnemies(): void {
+    // Place enemies at predefined tile positions on the warehouse map
+    const enemySpawns: { tileX: number; tileY: number; type: EnemyId }[] = [
+      { tileX: 2,  y: 3,  type: 'grunt' },
+      { tileX: 12, y: 3,  type: 'grunt' },
+      { tileX: 7,  y: 7,  type: 'shooter' },
+      { tileX: 2,  y: 11, type: 'grunt' },
+      { tileX: 12, y: 11, type: 'heavy' },
+      { tileX: 7,  y: 14, type: 'grunt' },
+      { tileX: 3,  y: 17, type: 'shooter' },
+      { tileX: 11, y: 17, type: 'grunt' },
+    ];
+    for (const spawn of enemySpawns) {
+      const pixel = this.mapSystem.tileToPixel(spawn.tileX, spawn.tileY);
+      const enemy = new Enemy(spawn.type, new Vector2(pixel.x, pixel.y), this.mapSystem);
+      this.combatSystem.spawnEnemy(enemy);
+    }
+  }
+
+  private spawnItems(): void {
+    const spawnSystem = new ItemSpawnSystem(WAREHOUSE.itemSpawnPoints);
+    const results = spawnSystem.generate();
+    const ts = this.mapSystem.data.tileSize;
+    for (const result of results) {
+      const item = new Item(result.itemTypeId, result.tileX, result.tileY, ts);
+      this.combatSystem.spawnItem(item);
+    }
   }
 
   onEnter(): void {
@@ -104,6 +144,10 @@ export class PlayingState implements GameState {
   }
 
   update(dt: number): void {
+    // Update input state first
+    this.input.setPlayerPosition(this.player.position);
+    this.input.update();
+
     // Player update — movement + shooting
     const bullets = this.player.update(
       dt,

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --outfile=dist/game.js --sourcemap",
-    "dev": "esbuild src/main.ts --bundle --outfile=dist/game.js --sourcemap --watch",
+    "build": "esbuild src/main.ts --bundle --outfile=dist/game.js --sourcemap --target=es2020",
+    "dev": "esbuild src/main.ts --bundle --outfile=dist/game.js --sourcemap --watch --target=es2020",
     "test": "vitest run",
     "test:watch": "vitest"
   },

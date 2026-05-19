@@ -4,9 +4,10 @@ import { MainMenuState, PlayingState, ResultState, ArmoryState } from './game/st
 import { AudioSystem } from './game/audio';
 import { loadProgression } from './game/progression/ProgressionData';
 
-const canvas = new Canvas(document.getElementById('game') as HTMLCanvasElement);
+const canvasEl = document.getElementById('game') as HTMLCanvasElement;
+const canvas = new Canvas(canvasEl);
 const ctx = canvas.getContext();
-const input = new KeyboardInput(canvas as unknown as HTMLCanvasElement);
+const input = new KeyboardInput(canvasEl);
 const stack = new StateStack();
 
 // --- Audio system (lazy-init on first user gesture) ---
@@ -24,7 +25,7 @@ function bindAudioUnlock(el: HTMLElement | Window, events: string[]): void {
   }
 }
 
-bindAudioUnlock(canvas as unknown as HTMLElement, ['click', 'touchstart']);
+bindAudioUnlock(canvasEl, ['click', 'touchstart']);
 bindAudioUnlock(window, ['keydown']);
 
 // Helper: create a PlayingState with progression bonuses and audio wired in
